@@ -3,9 +3,11 @@
 
 # Index
 
-**AWS EDUCATE - PAM SAMBA LDAP**: [readme AWS DOCKER PAM SAMBA LDAP](https://github.com/KeshiKiD03/samba21#pr%C3%A1ctica-pam---ldap---samba-en-aws-educate)
+**Manual LDAPS**: [Manual](https://docs.google.com/document/d/1lyjnPMFODZWkaCpDd12iIVZH5fkIafsXo9fS5PyFPSk/edit?usp=sharing)
 
 **SAMBA HELP KESHI**: [readme SAMBA](https://github.com/KeshiKiD03/samba21#samba-help-keshi)
+
+### Containers:
 
 Creació d'un container docker amb un servei ldap
 i la base de dades *dc=edt,dc=org*. Aquest servei
