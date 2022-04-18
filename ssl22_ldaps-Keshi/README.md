@@ -1,6 +1,12 @@
 # LDAPS
 ## @isx36579183 ASIX M11-SAD Curs 2021-2022
 
+# Index
+
+**AWS EDUCATE - PAM SAMBA LDAP**: [readme AWS DOCKER PAM SAMBA LDAP](https://github.com/KeshiKiD03/samba21#pr%C3%A1ctica-pam---ldap---samba-en-aws-educate)
+
+**SAMBA HELP KESHI**: [readme SAMBA](https://github.com/KeshiKiD03/samba21#samba-help-keshi)
+
 Creació d'un container docker amb un servei ldap
 i la base de dades *dc=edt,dc=org*. Aquest servei
 permet l'accés segur via TLS/SSL amb *ldaps* i 
