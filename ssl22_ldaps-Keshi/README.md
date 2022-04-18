@@ -24,25 +24,25 @@ Per tal de que escolti també al port ldaps (636) a més del port standard (389)
 /sbin/slapd -d0 -u ldap -h "ldap:/// ldaps:/// ldapi:///" 
 ```
 
-Per configurar les claus de TLS/SSL, *slapd.conf*:
+Per configurar les `claus de TLS/SSL`, *slapd.conf*:
 ```
-TLSCACertificateFile        /etc/openldap/certs/cacert.pem
-TLSCertificateFile          /etc/openldap/certs/servercert.ldap.pem
-TLSCertificateKeyFile       /etc/openldap/certs/serverkey.ldap.pem
+TLSCACertificateFile        /etc/ldap/certs/cacert.pem
+#TLSCertificateFile          /etc/ldap/certs/servercert.ldap.pem
+TLSCertificateFile		/etc/ldap/certs/servercertPLUS.pem
+TLSCertificateKeyFile       /etc/ldap/certs/serverkey.ldap.pem
 TLSVerifyClient       never
 TLSCipherSuite HIGH:MEDIUM:LOW:+SSLv2
 ```
 
-En el client cal configurar el certificat de la CA que ha de validar el certificat
-del servidor:
+En el `client` cal configurar el `certificat de la CA` que ha de validar el certificat del `servidor`: `/etc/openldap/ldap.conf`:
+
 ```
-/etc/openldap/ldap.conf:
-TLS_CACERT /etc/openldap/certs/cacert.pem
+TLS_CACERT /etc/ldap/certs/cacert.pem
 ```
 
-En la pròpia imatge ldap configurar el client ldap per usar el certificat de la CA:
+En la `pròpia imatge ldap` configurar el `client ldap` per usar el certificat de la CA: `/etc/openldap/ldap.conf`:
+
 ```
-/etc/openldap/ldap.con:
 TLS_CACERT /opt/docker/cacert.pem
 ```
 

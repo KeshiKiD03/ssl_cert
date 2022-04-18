@@ -11,5 +11,4 @@ COPY * /opt/docker/
 RUN chmod +x /opt/docker/startup.sh
 WORKDIR /opt/docker
 CMD /opt/docker/startup.sh
-EXPOSE 389 
-EXPOSE 636
+EXPOSE 389 636
