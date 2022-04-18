@@ -13,7 +13,7 @@ cp /opt/docker/serverkey.ldap.pem  /etc/ldap/certs/. # Key del servidor
 rm -rf /etc/ldap/slapd.d/*
 rm -rf /var/lib/ldap/*
 
-cp /opt/docker/slapd.conf /etc/ldap/slapd.conf # NO CAL?
+cp /opt/docker/slapd.conf /etc/ldap/slapd.conf 
 
 slaptest -f /opt/docker/slapd.conf -F /etc/ldap/slapd.d # Provem i ensamblem el servidor LDAP
 slaptest -u -f /opt/docker/slapd.conf -F /etc/ldap/slapd.d
