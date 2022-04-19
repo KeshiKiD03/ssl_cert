@@ -1,0 +1,30 @@
+    1  ls -l
+    2  apt-get update
+    3  apt-get install openssl
+    4  mkdir /etc/ldap/certs
+    5  cd /etc/ldap/certs/
+    6  ls -l
+    7  ldapsearch -x -LLL
+    8  ls -l
+    9  openssl genrsa -des3 --out cakey.pem 2048
+   10  ls -l
+   11  file cakey.pem 
+   12  apt-get install cakey.pem 
+   13  apt-get install file
+   14  openssl rsa --noout --text -in cakey.pem
+   15  openssl rsa -in serverkey.pem -pubout -out serverpub.pem
+   16  openssl genrsa -out serverkey.pem 4096
+   17  openssl rsa -noout --text -in serverkey.pem
+   18  ls -l
+   19  openssl rsa -in serverkey.pem -pubout -out serverpub.pem
+   20  ls -l
+   21  cat serverpub.pem 
+   22  openssl req -new -x509 -key cakey.pem -days 365 cacert.pem
+   23  openssl req -new -x509 -days 365 -key cakey.pem -out cacert.pem
+   24  ls -l
+   25  history
+   26  ls -l
+   27  openssl req -new -x509 -days 365 -key cakey.pem -out ca_leomessicert.pem
+   28  ls -l
+   29  ls -l
+   30  history > history.txt
