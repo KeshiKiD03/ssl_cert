@@ -32,16 +32,9 @@
 
 * slapd.conf
 
-```
-TLSCACertificateFile        /etc/ldap/certs/ca_nombreInventado_cert.pem
+    --> 
 
-TLSCertificateFile		/etc/ldap/certs/servercertPLUS.pem
-TLSCertificateKeyFile       /etc/ldap/certs/serverkey_ldap.pem
-
-TLSVerifyClient       never
-#TLSCipherSuite        HIGH:MEDIUM:LOW:+SSLv2
-```
-
+    --> 
 
 * ldap.conf 
 
