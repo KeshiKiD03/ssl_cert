@@ -411,3 +411,122 @@ ldapsearch -x -LLL -Z -h 172.19.0.2 -s base -b 'dc=edt,dc=org’
 
 ldapsearch -x -LLL -H ldaps://172.19.0.2 -s base -b 'dc=edt,dc=org'
 (No funciona)  - NO FUNCIONA POR IP, EL CERTIFICADO SOLO FUNCIONA POR COMMON NAME - FQDN
+
+
+
+
+----------------------------------------------------------------------------
+
+# Comandos de OpenSSL
+
+## Extra Subject Alternative Name EXT.ALTERNATE.CONF
+
+__Atenció__ 
+
+Si es genera un nou certificat cal generar de nou la imatge docker i fer el run, no podem simplement copiar-la en calent al container per fer el test perquè el certificat es carrega al slapd en temps de construccció (en fer _slaptest_) de la base de dades.
+
+> Fitxer de extensions amb noms alternatius de host del servidor:
+
+__ext.alternate.conf__
+
+```
+basicConstraints=CA:FALSE
+extendedKeyUsage=serverAuth
+subjectAltName=IP:172.17.0.2,IP:127.0.0.1,email:copy,URI:ldaps://mysecureldapserver.org
+```
+
+> Generar el certificat nou (utilitzem la CA de Veritat Absoluta perquè no sigui autosignat):
+
+```
+openssl x509 -CAkey cakey.pem -CA cacert.pem -req -in serverreq.ldap.pem -days 3650 -CAcreateserial -extfile ext.alternate.conf -out servercert.ldap.pem
+
+Signature ok
+
+subject=/C=ca/ST=barcelona/L=barcelona/O=edt/OU=informatica/CN=ldap.edt.org/emailAddress=ldap@edt.org
+
+Getting CA Private Key
+```
+
+```
+openssl x509 -CAkey cakey.pem -CA cacert.pem -req -in serverreq.ldap.pem -days 3650 -CAcreateserial -extfile ext.alternate.conf -out servercert.ldap.pem
+
+RESUM DE TOT: Signar / crear un certificat per 'ldapserver'.
+SIGNIFICAT INDIVIDUAL:
+```
+
+
+> __Verificar__
+
+```
+openssl x509 -noout -text -in servercert.ldap.pem
+        ...
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+            X509v3 Subject Alternative Name: 
+                IP Address:172.17.0.2, IP Address:127.0.0.1, email:ldap@edt.org, URI:ldaps://mysecureldapserver.org
+```
+
+# Test LDAP
+
+```
+# ldapsearch -x -LLL -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+
+# ldapsearch -x -LLL -Z -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+
+# ldapsearch -x -LLL -ZZ -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+
+# ldapsearch -x -LLL -H ldaps://172.17.0.2  -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+
+# ldapsearch -x -LLL -H ldaps://172.17.0.2:636  -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+
+# ldapsearch -x -LLL -ZZ -H ldaps://172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+ldap_start_tls: Operations error (1)
+	additional info: TLS already started
+```
+
+```
+# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+172.17.0.2 ldap.edt.org mysecureldapserver.org
+
+# ldapsearch -x -LLL -H ldaps://ldap.edt.org -s base -b 'dc=edt,dc=org' dn
+dn: dc=edt,dc=org
+```
+
+# Test del certificat
+
+```
+# openssl s_client -connect 172.17.0.2:636 < /dev/null 2> /dev/null | openssl x509 -noout -tex
+```
+
+# Test des de l'interior del container
+
+```
+# ldapsearch -x -LLL -ZZ -h 127.0.0.1 -s base
+dn: dc=edt,dc=org
+dc: edt
+description: Escola del treball de Barcelona
+objectClass: dcObject
+objectClass: organization
+o: edt.org
+
+[root@ldap docker]# ldapsearch -x -LLL -H ldaps://127.0.0.1 -s base dn
+dn: dc=edt,dc=org
+
+[root@ldap docker]# ldapsearch -x -LLL -H ldaps://localhost -s base dn
+dn: dc=edt,dc=org
+```
+
+# Test Subject Alternative Name
+
+```
+ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -b 'dc=edt,dc=org'
+```
