@@ -339,3 +339,75 @@ TLSVerifyClient       never
 8. Modificar el `ldap.conf` + `/etc/hosts`
 
 9. Probar comandos de LDAP y LDAPS.
+
+ldapsearch -x  -H ldap://ldap.edt.org # Lo usamos con -s base
+(Insegura por el puerto 389)
+
+
+
+# IMPORTANTE el fichero cacert.pem (Certificado de CA) en /etc/ssl/certs/.
+
+ldapsearch -x  -H ldaps://ldap.edt.org 
+(Segura por el puerto 636)
+
+
+
+
+
+
+ldapsearch -d1 -x -LLL -H ldaps://ldap.edt.org 
+(Seguro por el puerto 636 con debug -d1 y -LLL (Human Readable))
+
+
+
+
+# USANT STARTLS: (Convierte un puerto INSEGURO en SEGURO)
+
+ldapsearch -x -Z -H ldap://ldap.edt.org
+(Inicia STARTLS pero si da ERROR no pasa nada si no usas Startls. Pero funciona igualmente, si puedes lo usas porfa)
+
+
+
+
+ldapsearch -x -ZZ -H ldap://ldap.edt.org -s base
+(Inicia y obliga a usar forzadamente STARTLS)
+
+
+
+
+# Verificamos si van por el puerto INSEGURO
+
+ldapsearch -d1 -x -ZZ -H ldap://ldap.edt.org
+(Inicia STARTLS pero si da ERROR no pasa nada si no usas Startls. Tiene -d1 para debug del “dialogo”. Pero funciona igualmente, si puedes lo usas porfa) (Observamos que va por el puerto INSEGURO 389)
+
+
+
+
+ldapsearch -d1 -x -ZZ -H ldap://ldap.edt.org
+(Inicia y obliga a usar forzadamente STARTLS. Tiene -d1 para debug del “dialogo”) - Va por el puerto inseguro 389.
+
+
+
+
+
+ldapsearch -x -ZZ -H ldap://ldap.edt.org -d1 dn 2> log 
+(Inicia y obliga a usar forzadamente STARTLS. Tiene -d1 para debug del “dialogo”). Va por el puerto inseguro 389. Lo guarda en un LOG y muestra por pantalla el resultado.
+
+
+
+
+# Otros
+
+ldapsearch -x -LLL -h 172.19.0.2 -s base -b 'dc=edt,dc=org'
+(Conexión normal especificando host en lugar de URI + base manualmente)
+
+
+
+ldapsearch -x -LLL -Z -h 172.19.0.2 -s base -b 'dc=edt,dc=org’
+(Intenta iniciar como STARTLS sin especificar la URI y como host, es correcto error -11) - NO FUNCIONA POR IP, EL CERTIFICADO SOLO FUNCIONA POR COMMON NAME - FQDN
+
+
+
+
+ldapsearch -x -LLL -H ldaps://172.19.0.2 -s base -b 'dc=edt,dc=org'
+(No funciona)  - NO FUNCIONA POR IP, EL CERTIFICADO SOLO FUNCIONA POR COMMON NAME - FQDN
