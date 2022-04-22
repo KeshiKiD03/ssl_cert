@@ -1,6 +1,151 @@
 # LDAPS
 ## @isx36579183 ASIX M11-SAD Curs 2021-2022
+-----------
 
+1. Generar clave CA:
+
+__openssl genrsa -out cakey.pem 1024__
+
+2. Generar req autosing CA FORMATO PEM:
+
+__openssl req -new -x509 -nodes -sha1 -days 365 -key cakey.pem -out ca_andal_cert.pem__ 
+
+Country Name (2 letter code) [AU]:CA
+State or Province Name (full name) [Some-State]:Catalunya
+Locality Name (eg, city) []:Barcelona
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Veritat Andal
+Organizational Unit Name (eg, section) []:veritat
+Common Name (e.g. server FQDN or YOUR name) []:aaron.edt.org
+Email Address []:aaron@edt.org
+keshi@KeshiKiD03:~/Documents/ss
+
+3. Crear fichero `myserver.cnf` a partir de `/etc/ssl/openssl.cnf`
+
+[ v3_req ]
+
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.0 = __aaron.edt.org__
+DNS.1 = mysecureldapserver.org
+DNS.2 = ldap
+IP.1 = __172.19.0.2__
+IP.2 = 127.0.0.1
+
+4. Crear el fichero `ext.alternate.conf` = Plantilla de SubAlternateName.
+
+basicConstraints=CA:FALSE
+extendedKeyUsage=serverAuth
+subjectAltName=IP:__172.19.0.2__,IP:127.0.0.1,email:copy,DNS:mysecureldapserver.org,DNS:ldap
+
+5. Generar key server y req del server con su config (a partir del config en el fichero myserver.cnf):
+
+__openssl req -newkey rsa:2048 -nodes -sha256 -keyout serverkey.ldap.pem -out req-server.pem -config myserver.cnf__
+
+Country Name (2 letter code) [CA]:
+State or Province Name (full name) [Barcelona]:
+Locality Name (eg, city) []:Barcelona
+Organization Name (eg, company) [ldap]:
+Organizational Unit Name (eg, section) [info]:edt
+Common Name (e.g. server FQDN or YOUR name) []:ldap.edt.org
+Email Address []:ldap@edt.org
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+
+
+6. Firmar el cert y generar el certificado con la CA veritat absoluta montar imagen docker con certs y listo:
+
+__openssl x509 -CAkey cakey.pem -CA ca_andal_cert.pem -req -in req-server.pem -days 3650 -CAcreateserial -out servercert.ldap.pem -extensions 'v3_req' -extfile myserver.cnf__
+
+Signature ok
+subject=C = CA, ST = Barcelona, L = Barcelona, O = ldap, OU = edt, CN = ldap.edt.org, emailAddress = ldap@edt.org
+Getting CA Private Key
+
+
+7. Editar `install.sh` + `slapd.conf` + `install.sh` + `startup.sh`
+
+`install.sh`
+
+mkdir /etc/ldap/certs
+
+cp /opt/docker/ca_andal_cert.pem /etc/ldap/certs/. # PER PROVAR-SE A SI MATEIX COM A CLIENT
+cp /opt/docker/ca_andal_cert.pem /etc/ssl/certs/. # Certificat de CA
+cp /opt/docker/servercert.ldap.pem /etc/ldap/certs/. # Certificat del servidor
+
+cp /opt/docker/serverkey.ldap.pem  /etc/ldap/certs/. # Key del servidor
+
+cp /opt/docker/serverkey.ldap.pem  /etc/ldap/certs/. # Key del servidor
+
+
+rm -rf /etc/ldap/slapd.d/*
+rm -rf /var/lib/ldap/*
+
+cp /opt/docker/slapd.conf /etc/ldap/slapd.conf
+
+slaptest -f /opt/docker/slapd.conf -F /etc/ldap/slapd.d # Provem i ensamblem el servidor LDAP
+slaptest -u -f /opt/docker/slapd.conf -F /etc/ldap/slapd.d
+
+slapadd -F /etc/ldap/slapd.d -l /opt/docker/edt.org.ldif # Populate de LDAP
+chown -R openldap.openldap /etc/ldap/slapd.d /var/lib/ldap
+
+cp /opt/docker/ldap.conf /etc/ldap/ldap.conf # Necesari per probar-se a si mateix
+
+
+`slapd.conf`
+
+TLSCACertificateFile        /etc/ldap/certs/ca_andal_cert.pem
+
+TLSCertificateFile              /etc/ldap/certs/servercert.ldap.pem
+
+TLSCertificateKeyFile       /etc/ldap/certs/serverkey.ldap.pem
+
+TLSVerifyClient       never
+#TLSCipherSuite        HIGH:MEDIUM:LOW:+SSLv2
+
+
+`ldap.conf`
+
+BASE    dc=edt,dc=org
+URI     ldap://ldap.edt.org
+
+#SIZELIMIT      12
+#TIMELIMIT      15
+#DEREF          never
+
+# TLS certificates (needed for GnuTLS)
+
+TLS_CACERT      /etc/ldap/certs/ca_andal_cert.pem
+TLS_CACERT      /etc/ldap/certs/servercert.ldap.pem
+
+
+8. Editar `/etc/hosts`
+
+172.19.0.2	ldap.edt.org mysecureldapserver.org
+127.0.0.1	localhost
+
+9. Build & deploy docker.
+
+docker build -t keshikid03/ssl22:ldaps_vExt .
+
+docker run --rm --name ldap.edt.org -h ldap.edt.org --net 2hisx -d keshikid03/ssl22:ldaps_vExt
+
+NOTA: Vigilar los permisos
+
+sudo chmod 665 *
+
+sudo chmod 775 install.sh startup.sh
+
+10. Poner el certificado de la CA '`ca_andal_cert.pem`' en `/etc/ldap/certs` (Tiene que existir).
+
+11. Pruebas de ldapsearch INSEGURO, SEGURO, STARTS Z ZZ Y SUBJECT ALTERNATE NAME.
+
+----------
 # Objetivos
 
 1. Conectividad de LDAP con __Certificados TLS/SSL__. 

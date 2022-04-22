@@ -23,7 +23,8 @@ Email Address []:Veritat@AbsolutaKingJuanca.edt
 # Generar key server y req del server con su config (config en el fixero myserver.cnf):
 openssl req -newkey rsa:2048 -nodes -sha256 -keyout serverkey.ldap.pem -out req-server.pem -config myserver.cnf
 
-#Ejemplo de ficjero myserver.cnf
+#Ejemplo de fichero myserver.cnf
+
 [ v3_req ]
 
 # Extensions to add to a certificate request
