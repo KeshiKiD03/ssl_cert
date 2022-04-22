@@ -17,7 +17,6 @@
 
 * ldap21:group --> Docker
 
-
 * openssl CA = "Inventat"
 
     * Par de claves Pub/Priv para la CA --> ``cakey.pem``
@@ -41,15 +40,26 @@
 
 > openssl genrsa -out cakey.pem 1024
 
-* Verificar
+* Verificar: 
 
-2. Generar `REQUEST Autofirmado` CA "Inventado" en formato PEM.
+    * `openssl rsa --noout -text -in cakey.pem`
 
-> openssl req -new -x509 -nodes -sha1 -days 365 -key cakey.pem -out ca-NOMBRE-cert.pem 
+    RSA Private-Key: (1024 bit, 2 primes)
 
-* Verificar
+    * `file cakey.pem`
 
-3. Modificar el `extserver.cnf`.
+    cakey.pem: PEM RSA private key
+
+2. Generar el CA "Inventado" en formato PEM.
+
+> openssl req -new -x509 -days 365 -key cakey.pem -out ca-NOMBRE-cert.pem 
+
+* Verificar:
+
+    * `openssl x509 -noout -text -in ca-NOMBRE-cert.pem`
+
+
+3. Modificar el `extserver.cnf` para LDAP.
 
 ```
 [ aaron_req ]
@@ -60,16 +70,25 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
 [ alt_names ]
-DNS.0 = ldap.edt.org
+DNS.0 = aaron.edt.org
 DNS.1 = mysecureldapserver.org
 DNS.2 = ldap
 IP.1 = [IPDocker]
 IP.2 = 127.0.0.1
 ```
 
-4. Generar una `Key Server` y `Request Server` a partir de una configuración especial (__extserver.cnf__) para LDAP; CA:False.
 
-> openssl req -newkey rsa:2048 -nodes -sha256 -keyout serverkey_ldap.pem -out serverrequest_ldap.pem -config extserver.cnf.
+4. Generar una __request__ donde se emitirá la `Key Server (serverkey_ldap)` y `Request Server (serverrequest_ldap)` a partir de una configuración especial (__extserver.cnf__) para LDAP; CA:False.
+
+> openssl req -newkey rsa:2048 -sha256 -keyout serverkey_ldap.pem -out serverrequest_ldap.pem -config extserver.cnf.
+
+* Con este comando generamos un 3x1 - Generamos un par de Claves y genera la request al mismo. 
+
+> password: Jupiter
+
+* Verificar la __REQUEST__:
+
+    * `openssl req -noout -text -in serverrequest_ldap.pem`
 
 * **-newkey** la clave privada a fabricar sea del tipo RSA:2048
 
@@ -79,9 +98,19 @@ IP.2 = 127.0.0.1
 
 * **Pide passphrase** porque no ha puest **-nodes**.
 
-5. Firmar el Certificado con la CA "Nueva"
+5. Firmar el Certificado y Generarla con la firma de la CA "Nueva".
 
 > openssl x509 -CAkey cakey.pem -CA ca-NOMBRE-cert.pem -req -in serverrequest_ldap.pem -days 3650 -CAcreateserial -out servercert_ldap.pem -extensions 'aaron_req' -extfile extserver.cnf
+
+Signature ok
+subject=C = CA, ST = catalunya, L = barcelona, O = edt, OU = ldap, CN = ldap.edt.org, emailAddress = ldap@edt.org
+Getting CA Private Key
+
+
+* Verificar:
+
+*   `openssl x509 -noout -text -in servercert_ldap.pem` 
+
 
 
 6. Modificar el `install.sh` + `ldap.conf` + `slapd.conf` + `startup.sh`.
@@ -101,7 +130,6 @@ cp /opt/docker/servercert_ldap.pem /etc/ldap/certs/. # Certificat del servidor
 
 cp /opt/docker/serverkey_ldap.pem  /etc/ldap/certs/. # Key del servidor
 
-#cp /opt/docker/servercertEXT.pem /etc/ldap/certs/.
 
 rm -rf /etc/ldap/slapd.d/*
 rm -rf /var/lib/ldap/*
@@ -139,31 +167,56 @@ cp /opt/docker/ldap.conf /etc/ldap/ldap.conf # Necesari per probar-se a si matei
 > ldap.conf
 
 ```
-BASE dc=edt,dc=org
+BASE	dc=edt,dc=org
+URI	ldap://ldap.edt.org
 
-URI ldap://ldap.edt.org
 
-TLS_CACERT /etc/ldap/certs/ca_nombreInventado_cert.pem
-TLS_CACERT /etc/ldap/certs/servercert_ldap.pem
+
+TLS_CACERT	/etc/ldap/certs/ca_ronaldo_cert.pem
+TLS_CACERT	/etc/ldap/certs/servercert_ldap.pem
+
 
 ```
 
 > slapd.sh
 
 ```
-TLSCACertificateFile        /etc/ldap/certs/ca_nombreInventado_cert.pem
+# Especificar CA Cert
 
-TLSCertificateFile		/etc/ldap/certs/servercert_ldap.pem
+TLSCACertificateFile        /etc/ldap/certs/ca_ronaldo_cert.pem
+
+# Especificar LDAP Cert
+
+TLSCertificateFile          /etc/ldap/certs/servercert_ldap.pem
+
+# Especificar LDAP Key
+
 TLSCertificateKeyFile       /etc/ldap/certs/serverkey_ldap.pem
 
 TLSVerifyClient       never
 #TLSCipherSuite        HIGH:MEDIUM:LOW:+SSLv2
+
 
 ```
 
 > startup.sh
 
 ```
+#! /bin/bash
+
+/opt/docker/install.sh && echo "Install Ok"
+
+# Detach
+
+#/usr/sbin/slapd -d0
+
+# Detach with LDAPS
+
+/usr/sbin/slapd -d0 -u openldap -h "ldap:/// ldaps:/// ldapi:///"
+
+# Interactive with LDAPS
+
+# /usr/sbin/slapd -u openldap -h "ldap:/// ldaps:/// ldapi:///"
 
 
 ```
@@ -177,27 +230,97 @@ TLSVerifyClient       never
 
 7. Generar Docker.
 
+docker build -t keshikid03/ssl22:ldaps .
+
+docker network create 2hisx
+
+```
+docker run --rm --name ldap.edt.org -h ldap.edt.org --net 2hisx -d keshikid03/ssl22:ldaps
+```
+
+# HOST LOCAL (IMPORTANTE)
+
+* Una vez hecho el DEPLOY DE Docker añadir el __CERT DE LA CA__ en el cliente en `/etc/ldap/certs` (Importante crear la carpeta antes).
+
+* Modificar el __ldap.conf__ y añadir esta línea:
+
+```
+BASE	dc=edt,dc=org
+URI	ldap://ldap.edt.org
+
+TLS_CACERT /etc/ldap/certs/ca_ronaldo_cert.pem
+
+```
+
+
 8. Probar comandos: 
+
+1. ldapsearch -x -LLL -H ldaps://ldap.edt.org -s base 
+
+Ldap Seguro por el puerto 636
+
+2. ldapsearch -d1 -x -LLL -H ldaps://ldap.edt.org -s base 
+
+> DEBUG port 636
+
+* STARTLS
+
+3. ldapsearch -x -LLL -Z -H ldap://ldap.edt.org -s base
+
+> (Inicia STARTLS pero si da ERROR no pasa nada si no usas Startls. Pero funciona igualmente, si puedes lo usas porfa)
+
+4. ldapsearch -d1 -x -LLL -Z -H ldap://ldap.edt.org -s base
+
+> DEBUG port 389
+
+5. ldapsearch -x -LLL -ZZ -H ldap://ldap.edt.org -s base
+
+> (Inicia y obliga a usar forzadamente STARTLS)
+
+6. ldapsearch -d1 -x -LLL -ZZ -H ldap://ldap.edt.org -s base
+
+> DEBUG port 389
+
+7. ldapsearch -x -ZZ -H ldap://ldap.edt.org -d1 dn 2> log 
+
+> (Inicia y obliga a usar forzadamente STARTLS. Tiene -d1 para debug del “dialogo”). Va por el puerto inseguro 389. Lo guarda en un LOG y muestra por pantalla el resultado.
+
+8. ldapsearch -x -LLL -h 172.18.0.2 -s base
+
+> (Conexión normal especificando host en lugar de URI + base manualmente)
+
+9. # ldapsearch -x -LLL -ZZ -H ldaps://172.18.0.2 -s base -b 'dc=edt,dc=org' dn
+
+ldap_start_tls: Operations error (1)
+	additional info: TLS already started
+
+10. `ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -b 'dc=edt,dc=org' -s base`
+
+11. 
+
+12. 
+
+13. 
 
 # Test LDAP
 
 ```
-# ldapsearch -x -LLL -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -h 172.18.0.2 -s base -b 'dc=edt,dc=org' dn
 dn: dc=edt,dc=org
 
-# ldapsearch -x -LLL -Z -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -Z -h 172.18.0.2 -s base -b 'dc=edt,dc=org' dn
 dn: dc=edt,dc=org
 
-# ldapsearch -x -LLL -ZZ -h 172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -ZZ -h 172.18.0.2 -s base -b 'dc=edt,dc=org' dn
 dn: dc=edt,dc=org
 
-# ldapsearch -x -LLL -H ldaps://172.17.0.2  -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -H ldaps://172.18.0.2  -s base -b 'dc=edt,dc=org' dn
 dn: dc=edt,dc=org
 
-# ldapsearch -x -LLL -H ldaps://172.17.0.2:636  -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -H ldaps://172.18.0.2:636  -s base -b 'dc=edt,dc=org' dn
 dn: dc=edt,dc=org
 
-# ldapsearch -x -LLL -ZZ -H ldaps://172.17.0.2 -s base -b 'dc=edt,dc=org' dn
+# ldapsearch -x -LLL -ZZ -H ldaps://172.18.0.2 -s base -b 'dc=edt,dc=org' dn
 ldap_start_tls: Operations error (1)
 	additional info: TLS already started
 ```
@@ -238,6 +361,5 @@ dn: dc=edt,dc=org
 # Test Subject Alternative Name
 
 ```
-ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -b 'dc=edt,dc=org'
+ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -b 'dc=edt,dc=org' -s base
 ```
-
