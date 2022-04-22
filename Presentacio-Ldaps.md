@@ -118,26 +118,37 @@ openssl x509 -noout -text -in ca_leomessi_cert.pem
 
 ```
 
-9. Generar un CERTIFICADO con EXT Alternate (Subject Alternative Name) --> ext.alternate.conf __subjectAltName=IP:ipDocker,IP:127.0.0.1,email:copy,URI:ldaps://mysecureldapserver.org__
+9. Generar un CERTIFICADO con EXTENSIONES (extserver.cnf) (Subject Alternative Name) --> extserver.cnf
 
-> __ext.alternate.conf__
-
-```
-basicConstraints=CA:FALSE
-extendedKeyUsage=serverAuth
-subjectAltName=IP:[ipDocker]],IP:127.0.0.1,email:copy,URI:ldaps://mysecureldapserver.org
-```
-
-> __/etc/ssl/openssl.cnf__
+> __extserver.cnf__
 
 ```
-FALTA
+[ v3_req ]
+
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.0 = ldap.edt.org
+DNS.1 = mysecureldapserver.org
+DNS.2 = ldap
+IP.1 = [IPDOCKER]
+IP.2 = 127.0.0.1
 ```
 
-> Generar Certificado_
+> Generar Key Server y Request con la configuración (extserver.cnf):
 
 ```
-openssl x509 -CA ca_leomessi_cert.pem -CAkey cakey.pem -req -in serverrequest_ldap.pem -out servercertEXT.pem -CAcreateserial -extfile ext.alternate.conf -days 360
+openssl req -newkey rsa:2048 -nodes -sha256 -keyout serverkey_ldap.pem -out serverrequest_ldap.pem -config extserver.cnf
+```
+
+
+> Firmar el cert con la CA "INVENTADA" montar Imagen Docker con certs y listo:
+
+```
+openssl x509 -CAkey ca.key -CA ca_leomessi_cert.pem -req -in serverrequest_ldap.pem -days 3650 -CAcreateserial -out servercert_._ldap.pem -extensions 'v3_req' -extfile extserver.cnf
 ```
 
 

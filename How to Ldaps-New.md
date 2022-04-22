@@ -22,7 +22,7 @@
 
     * Par de claves Pub/Priv para la CA (pass: _cakey_) --> ``cakey.pem``
 
-    * CA inventado nuevo a partir de la CA (pass: _cakey_) --> ``ca_nombreInventado_cert.pem``
+    * CA inventado nuevo a partir de la Key (pass: _cakey_) --> ``ca_nombreInventado_cert.pem``
 
     * Par de claves Pub/Priv para el Servidor LDAP edt.org (_Passwordless_) --> ``serverkey_ldap.pem` 
 
@@ -129,7 +129,7 @@ openssl req -new -x509 -days 365 -keyout cakey.pem -out ca_leomessi_cert.pem
 
 ```
 
-* **-neykey** la clave privada a fabricar sea del tipo RSA:2048
+* **-newkey** la clave privada a fabricar sea del tipo RSA:2048
 
 * **-keyout** creará una clave privada con la fabricación del CERTIFICADO, sin password
 
@@ -529,4 +529,38 @@ dn: dc=edt,dc=org
 
 ```
 ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -b 'dc=edt,dc=org'
+```
+
+
+---
+
+> __extserver.cnf__
+
+```
+[ v3_req ]
+
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.0 = ldap.edt.org
+DNS.1 = mysecureldapserver.org
+DNS.2 = ldap
+IP.1 = [IPDOCKER]
+IP.2 = 127.0.0.1
+```
+
+> Generar Key Server y Request con la configuración (extserver.cnf):
+
+```
+openssl req -newkey rsa:2048 -nodes -sha256 -keyout serverkey_ldap.pem -out serverrequest_ldap.pem -config extserver.cnf
+```
+
+
+> Firmar el cert con la CA "INVENTADA" montar Imagen Docker con certs y listo:
+
+```
+openssl x509 -CAkey ca.key -CA ca_leomessi_cert.pem -req -in serverrequest_ldap.pem -days 3650 -CAcreateserial -out servercert_._ldap.pem -extensions 'v3_req' -extfile extserver.cnf
 ```
