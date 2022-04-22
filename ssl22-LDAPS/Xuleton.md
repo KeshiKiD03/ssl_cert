@@ -109,7 +109,7 @@ TLSVerifyClient       never
 #TLSCipherSuite        HIGH:MEDIUM:LOW:+SSLv2
 
 
-`ldap.conf`
+`ldap.conf` (Server)
 
 BASE    dc=edt,dc=org
 URI     ldap://ldap.edt.org
@@ -123,8 +123,21 @@ URI     ldap://ldap.edt.org
 TLS_CACERT      /etc/ldap/certs/ca_andal_cert.pem
 TLS_CACERT      /etc/ldap/certs/servercert.ldap.pem
 
+`ldap.conf` (Host Local)
 
-8. Editar `/etc/hosts`
+BASE    dc=edt,dc=org
+URI     ldap://ldap.edt.org
+
+#SIZELIMIT      12
+#TIMELIMIT      15
+#DEREF          never
+
+# TLS certificates (needed for GnuTLS)
+
+TLS_CACERT      /etc/ldap/certs/ca_andal_cert.pem
+TLS_CACERT      /etc/ldap/certs/servercert.ldap.pem
+
+8. Editar `/etc/hosts` (Host Local)
 
 172.19.0.2	ldap.edt.org mysecureldapserver.org
 127.0.0.1	localhost
