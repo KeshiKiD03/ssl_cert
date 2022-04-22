@@ -156,7 +156,66 @@ sudo chmod 775 install.sh startup.sh
 
 10. Poner el certificado de la CA '`ca_andal_cert.pem`' en `/etc/ldap/certs` (Tiene que existir).
 
+sudo cp ca_andal_cert.pem /etc/ldap/certs
+
 11. Pruebas de ldapsearch INSEGURO, SEGURO, STARTS Z ZZ Y SUBJECT ALTERNATE NAME.
+
+ 2052  ldapseach -x -LLL -H ldap://ldap.edt.org -s base
+
+ 2053  ldapsearch -x -LLL -H ldap://ldap.edt.org -s base
+
+ 2054  ldapsearch -x -LLL -H ldaps://ldap.edt.org -s base
+
+
+ 2062  ldapsearch -x -LLL -H ldap://ldap.edt.org -s base
+
+ 2063  ldapsearch -x -LLL -H ldaps://ldap.edt.org -s base
+
+ 2064  ldapsearch -x -LLL -H ldaps://mysecureldapserver.org -s base
+
+ 2065  ldapsearch -x -LLL -Z -H ldap://ldap.edt.org -s base
+
+ 2066  ldapsearch -x -LLL -ZZ -H ldap://ldap.edt.org -s base
+
+ 2067  ldapsearch -x -LLL -ZZ -H ldap://mysecureldapserver.org -s base
+
+ 2068  ldapsearch -x -LLL -Z -H ldap://mysecureldapserver.org -s base
+
+
+ 2075  cd $HOME
+ 2076  ldapsearch -x -LLL -ZZ -H ldaps://172.19.0.2 -s base
+ 2077  ldapsearch -x -LLL -Z -h 172.19.0.2 -s base
+
+
+
+openssl x509 --noout -text -in servercert.ldap.pem 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ----------
 # Objetivos
