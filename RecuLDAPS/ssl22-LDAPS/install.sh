@@ -4,12 +4,11 @@
 # -------------------------------------
 mkdir /etc/ldap/certs
 
-cp /opt/docker/ca_ronaldo_cert.pem /etc/ldap/certs/. # PER PROVAR-SE A SI MATEIX COM A CLIENT
-cp /opt/docker/ca_ronaldo_cert.pem /etc/ssl/certs/. # Certificat de CA
+cp /opt/docker/ca_andal_cert.pem /etc/ldap/certs/. # PER PROVAR-SE A SI MATEIX COM A CLIENT
+cp /opt/docker/ca_andal_cert.pem /etc/ssl/certs/. # Certificat de CA
+cp /opt/docker/servercert.ldap.pem /etc/ldap/certs/. # Certificat del servidor
 
-cp /opt/docker/servercert_ldap.pem /etc/ldap/certs/. # Certificat del servidor
-
-cp /opt/docker/serverkey_ldap.pem  /etc/ldap/certs/. # Key del servidor
+cp /opt/docker/serverkey.ldap.pem  /etc/ldap/certs/. # Key del servidor
 
 
 rm -rf /etc/ldap/slapd.d/*
